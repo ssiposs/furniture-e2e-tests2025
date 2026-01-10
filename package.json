@@ -10,10 +10,13 @@
   },
   "devDependencies": {
     "chai": "^4.5.0",
-    "mocha": "^10.7.3",
-    "selenium-webdriver": "^4.26.0",
+    "mocha": "^10.8.2",
+    "selenium-webdriver": "^4.39.0",
     "start-server-and-test": "^2.0.8",
-    "wait-on": "^7.0.1",
-    "tree-kill": "^1.2.2"
+    "tree-kill": "^1.2.2",
+    "wait-on": "^7.0.1"
+  },
+  "dependencies": {
+    "chromedriver": "^143.0.4"
   }
 }
