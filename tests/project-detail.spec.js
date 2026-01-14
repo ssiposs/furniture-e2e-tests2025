@@ -5,19 +5,37 @@ const { expect } = require("chai");
 
 const BASE_URL = "http://localhost:4200/project";
 
+// Set to false to watch tests visually, true for CI/automated runs
+const HEADLESS = false;
+
+// Slow mode delay (ms) - set to 0 for fast execution
+const SLOW_MODE_DELAY = 1500;
+
+/**
+ * Helper: Pause for visual observation
+ */
+async function pause(driver, ms = SLOW_MODE_DELAY) {
+  if (!HEADLESS && ms > 0) {
+    await driver.sleep(ms);
+  }
+}
+
 describe("Project Detail Panel E2E", function () {
-  this.timeout(90000);
+  this.timeout(180000); // Increased timeout for slow mode
 
   /** @type {import('selenium-webdriver').ThenableWebDriver} */
   let driver;
 
   before(async () => {
     const options = new chrome.Options().addArguments(
-      "--headless=new",
       "--window-size=1400,900",
       "--disable-gpu",
       "--no-sandbox"
     );
+
+    if (HEADLESS) {
+      options.addArguments("--headless=new");
+    }
 
     driver = await new Builder()
       .forBrowser("chrome")
@@ -36,12 +54,16 @@ describe("Project Detail Panel E2E", function () {
    */
   async function waitForProjectList() {
     await driver.get(BASE_URL);
+    await pause(driver);
+
     await driver.wait(async () => {
       const table = await driver.findElements(By.css("table.custom-table"));
       const empty = await driver.findElements(By.css(".info-box.empty"));
       const loading = await driver.findElements(By.css(".info-box.loading"));
       return (table.length > 0 || empty.length > 0) && loading.length === 0;
     }, 20000);
+
+    await pause(driver);
   }
 
   /**
@@ -52,6 +74,8 @@ describe("Project Detail Panel E2E", function () {
       until.elementLocated(By.css("table.custom-table tr.mat-mdc-row")),
       10000
     );
+
+    await pause(driver, 800);
     await firstRow.click();
 
     await driver.wait(until.elementLocated(By.css(".detail-overlay")), 10000);
@@ -61,14 +85,13 @@ describe("Project Detail Panel E2E", function () {
       return loading.length === 0;
     }, 15000);
 
-    await driver.sleep(300);
+    await pause(driver);
   }
 
   /**
    * Helper: Close the detail panel safely
    */
   async function closeDetailPanel() {
-    // First, make sure no dialog backdrop is blocking
     await driver
       .wait(async () => {
         const backdrops = await driver.findElements(
@@ -77,22 +100,23 @@ describe("Project Detail Panel E2E", function () {
         return backdrops.length === 0;
       }, 5000)
       .catch(() => {
-        // If backdrop still there, try pressing ESC to close any dialog
         return driver.actions({ async: true }).sendKeys(Key.ESCAPE).perform();
       });
 
     await driver.sleep(200);
 
-    // Now close the detail panel
     const closeBtn = await driver.findElement(
       By.css(".detail-header .close-btn")
     );
+    await pause(driver, 800);
     await closeBtn.click();
 
     await driver.wait(async () => {
       const overlay = await driver.findElements(By.css(".detail-overlay"));
       return overlay.length === 0;
     }, 5000);
+
+    await pause(driver);
   }
 
   // ============================================
@@ -114,6 +138,8 @@ describe("Project Detail Panel E2E", function () {
 
     const addBtn = await driver.findElement(By.css("#add-project-btn"));
     expect(await addBtn.isDisplayed()).to.equal(true);
+
+    await pause(driver);
   });
 
   // ============================================
@@ -150,6 +176,7 @@ describe("Project Detail Panel E2E", function () {
     const badgeIds = await driver.findElements(By.css(".badge-id"));
     expect(badgeIds.length, "Badge ID should exist").to.be.greaterThan(0);
 
+    await pause(driver);
     await closeDetailPanel();
   });
 
@@ -184,6 +211,7 @@ describe("Project Detail Panel E2E", function () {
       "BODIES",
     ]);
 
+    await pause(driver);
     await closeDetailPanel();
   });
 
@@ -217,11 +245,13 @@ describe("Project Detail Panel E2E", function () {
     const gridBtnClass = await gridBtn.getAttribute("class");
     expect(gridBtnClass).to.include("active");
 
+    await pause(driver);
+
     const tableBtn = await driver.findElement(
       By.css(".view-toggle button:nth-child(2)")
     );
     await tableBtn.click();
-    await driver.sleep(300);
+    await pause(driver);
 
     const tableBtnClassAfter = await tableBtn.getAttribute("class");
     expect(tableBtnClassAfter).to.include("active");
@@ -230,7 +260,7 @@ describe("Project Detail Panel E2E", function () {
       By.css(".view-toggle button:nth-child(3)")
     );
     await visualBtn.click();
-    await driver.sleep(300);
+    await pause(driver);
 
     const visualBtnClassAfter = await visualBtn.getAttribute("class");
     expect(visualBtnClassAfter).to.include("active");
@@ -274,6 +304,7 @@ describe("Project Detail Panel E2E", function () {
       expect(latestBadges.length).to.be.greaterThan(0);
     }
 
+    await pause(driver);
     await closeDetailPanel();
   });
 
@@ -301,9 +332,11 @@ describe("Project Detail Panel E2E", function () {
       return;
     }
 
+    await pause(driver);
+
     const secondVersion = versionItems[1];
     await secondVersion.click();
-    await driver.sleep(300);
+    await pause(driver);
 
     const secondVersionClass = await secondVersion.getAttribute("class");
     expect(secondVersionClass).to.include("active");
@@ -347,6 +380,7 @@ describe("Project Detail Panel E2E", function () {
     expect(await archiveBtn.isDisplayed()).to.equal(true);
     expect(await deleteBtn.isDisplayed()).to.equal(true);
 
+    await pause(driver);
     await closeDetailPanel();
   });
 
@@ -365,6 +399,7 @@ describe("Project Detail Panel E2E", function () {
     }
 
     await openFirstProjectDetail();
+    await pause(driver);
 
     await driver.executeScript(`
       const overlay = document.querySelector('.detail-overlay');
@@ -373,7 +408,7 @@ describe("Project Detail Panel E2E", function () {
       }
     `);
 
-    await driver.sleep(500);
+    await pause(driver, 800);
 
     const overlaysAfter = await driver.findElements(By.css(".detail-overlay"));
 
@@ -403,6 +438,7 @@ describe("Project Detail Panel E2E", function () {
     }
 
     await openFirstProjectDetail();
+    await pause(driver);
     await closeDetailPanel();
 
     const overlaysAfter = await driver.findElements(By.css(".detail-overlay"));
@@ -440,6 +476,7 @@ describe("Project Detail Panel E2E", function () {
       expect(emptyBodies.length).to.be.greaterThan(0);
     }
 
+    await pause(driver);
     await closeDetailPanel();
   });
 
@@ -463,7 +500,7 @@ describe("Project Detail Panel E2E", function () {
       By.css(".view-toggle button:nth-child(2)")
     );
     await tableBtn.click();
-    await driver.sleep(300);
+    await pause(driver);
 
     const bodiesTable = await driver.findElements(By.css(".bodies-table"));
     const emptyBodies = await driver.findElements(By.css(".empty-bodies"));
@@ -494,16 +531,14 @@ describe("Project Detail Panel E2E", function () {
 
     await openFirstProjectDetail();
 
-    // Click edit button in footer
     const editBtn = await driver.findElement(
       By.xpath("//footer//button[.//mat-icon[text()='edit']]")
     );
+    await pause(driver, 800);
     await editBtn.click();
 
-    // Wait for dialog to appear
-    await driver.sleep(1000);
+    await pause(driver);
 
-    // Check for dialog presence
     const dialogSelectors = [
       ".mat-mdc-dialog-container",
       "mat-dialog-container",
@@ -521,18 +556,17 @@ describe("Project Detail Panel E2E", function () {
 
     expect(dialogFound, "Edit dialog should appear").to.equal(true);
 
-    // Close dialog - try clicking the Cancel button first
+    await pause(driver);
+
     try {
       const cancelBtn = await driver.findElement(
         By.xpath("//mat-dialog-container//button[contains(., 'Cancel')]")
       );
       await cancelBtn.click();
     } catch {
-      // If no Cancel button, use ESC
       await driver.actions({ async: true }).sendKeys(Key.ESCAPE).perform();
     }
 
-    // Wait for dialog to close completely
     await driver.wait(async () => {
       const backdrops = await driver.findElements(
         By.css(".cdk-overlay-backdrop-showing")
@@ -540,9 +574,8 @@ describe("Project Detail Panel E2E", function () {
       return backdrops.length === 0;
     }, 5000);
 
-    await driver.sleep(300);
+    await pause(driver, 500);
 
-    // Now close the detail panel
     const overlays = await driver.findElements(By.css(".detail-overlay"));
     if (overlays.length > 0) {
       await closeDetailPanel();
