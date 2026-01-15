@@ -5,7 +5,7 @@
   "description": "Selenium-based end-to-end tests for diyfurniture Draw2d",
   "scripts": {
     "start:app": "cd .. && npm run start",
-    "test:mocha": "mocha \"tests/**/*.spec.js\" --timeout 90000",
+    "test:mocha": "npx mocha \"tests/**/*.spec.js\" --timeout 90000",
     "test": "node run-e2e.js"
   },
   "devDependencies": {
@@ -17,6 +17,7 @@
     "wait-on": "^7.0.1"
   },
   "dependencies": {
+    "@cucumber/cucumber": "^11.3.0"
     "chromedriver": "^143.0.4"
   }
 }
